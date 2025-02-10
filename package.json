@@ -1,0 +1,31 @@
+{
+  "name": "svs-sbom-merger",
+  "version": "0.1.0",
+  "description": "Small script for gathering sbom information from different SVS repositories",
+  "main": "index.ts",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoeppner-dataport/svs-sbom-merger.git"
+  },
+  "keywords": [
+    "sbom"
+  ],
+  "author": "",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/hoeppner-dataport/svs-sbom-merger/issues"
+  },
+  "homepage": "https://github.com/hoeppner-dataport/svs-sbom-merger#readme",
+  "dependencies": {
+    "@cyclonedx/cyclonedx-library": "^1.13.3",
+    "axios": "^1.7.9",
+    "class-validator": "^0.14.1",
+    "spdx-license-list": "^6.9.0"
+  }
+}
