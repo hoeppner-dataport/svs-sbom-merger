@@ -14,36 +14,57 @@ axiosInstance.interceptors.response.use(
       return response;
     }
     return error;
-  }
+  },
 );
 
 export default async function loadSboms(
-  repoInfo: RepoInfo[]
+  repoInfo: Map<string, RepoInfo>,
 ): Promise<BomDto[]> {
-  const promises = repoInfo.map((repo) => loadSbom(repo.name, repo.version));
-  const result = await Promise.allSettled(promises);
-  const errors = result.filter((promise) => promise.status === "rejected");
-  // console.log("errors", errors); // Consider handling errors more robustly
-  const sboms = result
-    .filter((promise) => promise.status === "fulfilled")
-    .map((promise) => promise.value)
-    .filter((sbom) => sbom !== undefined);
-
+  const promises = Array.from(repoInfo.values()).map((repo) => {
+    return loadSbom(repo.name, repo.version);
+  });
+  const results = await Promise.allSettled(promises);
+  const sboms = processResults(results);
   return sboms;
 }
 
-const loadSbom = async (
+async function loadSbom(
   repository,
-  repositoryVersion
-): Promise<BomDto | undefined> => {
+  repositoryVersion,
+): Promise<BomDto | undefined> {
   const sbomUrl = `${getRepositoryUrl(
-    repository
+    repository,
   )}/releases/download/${repositoryVersion}/dependency-results.sbom.json`;
   const response = await axiosInstance.get(sbomUrl);
+  if (response.status !== 200) {
+    console.error(
+      `Failed to load SBOM for ${repository}@${repositoryVersion} (status: ${response.status})`,
+    );
+    return;
+  }
   const bom = new BomDto({
     repository,
     repositoryVersion,
     ...response.data,
   });
+  if (bom) {
+    console.info(
+      `Loaded SBOM for ${repository}@${repositoryVersion} (containing ${bom?.components?.length ?? "---"} components))`,
+    );
+  }
   return bom;
-};
+}
+
+function processResults(results) {
+  const sboms: BomDto[] = [];
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.warn(result.reason);
+    } else {
+      if (result.value !== undefined) {
+        sboms.push(result.value);
+      }
+    }
+  }
+  return sboms;
+}

@@ -1,7 +1,11 @@
 import { GITHUB_API_URL, GITHUB_RAW_URL, PROJECT } from "../config/config";
-import axios from "axios";
+import yaml from "js-yaml";
+import Axios from "axios";
 
-const axiosInstance = axios.create();
+import { setupCache } from "axios-cache-interceptor";
+
+const instance = Axios.create();
+const axiosInstance = setupCache(instance);
 axiosInstance.defaults.maxRedirects = 0; // Set to 0 to prevent automatic redirects
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -12,40 +16,32 @@ axiosInstance.interceptors.response.use(
       return response;
     }
     return error;
-  }
+  },
 );
-
-// const getRepositoryUrl = (repository) => {
-//   const url = `https://github.com/${PROJECT}/${repository}`;
-//   return url;
-// };
-
-const parseSimpleYamlContent = (content) => {
-  const map = content
-    .split("\n")
-    .filter((line) => line.includes(": "))
-    .map((line) => line.split(": "));
-
-  return map;
-};
 
 export default async function getRepoInfos(version: string) {
   const commitId = await getCommitId(version);
   const repoVersionMap = await getRepoKeyVersionMap(commitId);
   const repoNameKeyList = await getRepoNameKeyList(commitId);
-  const repoNameVersionMap = repoNameKeyList.map(([imageKey, repoName]) => {
+  const repoNameVersionMap = new Map();
+  for (const [imageKey, repoName] of Object.entries(repoNameKeyList)) {
     const repoKey = imageKey.replace("_REPO_NAME", "_IMAGE_TAG");
-    return {
-      key: repoKey,
+    const version = repoVersionMap[repoKey];
+    if (version === undefined) {
+      throw new Error(`No version defined for key '${repoKey}'`);
+    }
+    repoNameVersionMap.set(repoName, {
       name: repoName,
-      version: repoVersionMap[repoKey],
-    };
-  }, {});
+      version,
+    });
+  }
   return repoNameVersionMap;
 }
 
 async function getCommitId(version) {
   const url = `${GITHUB_API_URL}/repos/${PROJECT}/dof_app_deploy/tags`;
+  console.info(`Fetching release-tags from ${url}`);
+
   const response = await axiosInstance.get(url);
   const tagInfo = response.data.find((tag) => tag.name === version);
   if (tagInfo && tagInfo.commit && tagInfo.commit.sha) {
@@ -54,23 +50,30 @@ async function getCommitId(version) {
   throw new Error(`Commit ID not found for version ${version} in ${url}`);
 }
 
-async function getRepoKeyVersionMap(commitId) {
+async function getRepoKeyVersionMap(commitId: string) {
   const url = `${GITHUB_RAW_URL}/${PROJECT}/dof_app_deploy/${commitId}/ansible/host_vars/ref-dbc/version.yml`;
+  console.info(`Fetching version.yml from ${url}`);
+
   const response = await axiosInstance.get(url);
-  const lines = parseSimpleYamlContent(response.data);
-  const repoVersionMap = lines.reduce((map, [repoKey, version]) => {
-    map[repoKey] = version;
-    return map;
-  }, {});
+  const repoVersionMap = yaml.load(response.data);
+  for (const [key, value] of Object.entries(repoVersionMap)) {
+    if (typeof value !== "string" || /^\d+\.\d+\.\d+$/.test(value) === false) {
+      throw new Error(
+        `version.yml contains invalid version format for key '${key}': '${value}'`,
+      );
+    }
+  }
   return repoVersionMap; // Missing error handling: what if the response is not as expected?
 }
 
-async function getRepoNameKeyList(commitId, omitDofRepo = true) {
+async function getRepoNameKeyList(commitId: string, omitDofRepo = true) {
   const url = `${GITHUB_RAW_URL}/${PROJECT}/dof_app_deploy/${commitId}/ansible/group_vars/all/git_repos.yml`;
+  console.info(`Fetching git_repos.yml from ${url}`);
+
   const response = await axiosInstance.get(url);
-  const list = parseSimpleYamlContent(response.data);
-  if (omitDofRepo) {
-    return list.filter(([imageKey]) => !imageKey.includes("DOF_APP_DEPLOY"));
+  const map = yaml.load(response.data);
+  if (omitDofRepo === true) {
+    delete map["DOF_APP_DEPLOY_REPO_NAME"];
   }
-  return list; // Missing error handling: what if the response is not as expected?
+  return map; // Missing error handling: what if the response is not as expected?
 }
