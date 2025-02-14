@@ -1,7 +1,7 @@
 import axios from "axios";
-import { getRepositoryUrl } from "../helper/repo.helper";
-import { BomDto } from "./dto/Bom.dto";
 import { RepoInfo } from "../types/types";
+import { BomDto } from "./dto/Bom.dto";
+import { getRepositoryUrl } from "./helper/repo.helper";
 
 const axiosInstance = axios.create();
 axiosInstance.defaults.maxRedirects = 0; // Set to 0 to prevent automatic redirects

@@ -3,6 +3,7 @@ import yaml from "js-yaml";
 import Axios from "axios";
 
 import { setupCache } from "axios-cache-interceptor";
+import isVersionString from "./helper/isVersionString.helper";
 
 const instance = Axios.create();
 const axiosInstance = setupCache(instance);
@@ -56,10 +57,10 @@ async function getRepoKeyVersionMap(commitId: string) {
 
   const response = await axiosInstance.get(url);
   const repoVersionMap = yaml.load(response.data);
-  for (const [key, value] of Object.entries(repoVersionMap)) {
-    if (typeof value !== "string" || /^\d+\.\d+\.\d+$/.test(value) === false) {
+  for (const [repoKey, version] of Object.entries(repoVersionMap)) {
+    if (!isVersionString(version)) {
       throw new Error(
-        `version.yml contains invalid version format for key '${key}': '${value}'`,
+        `version.yml contains invalid version format for key '${repoKey}': '${version}'`,
       );
     }
   }

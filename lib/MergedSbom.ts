@@ -1,3 +1,4 @@
+import { LicenseData } from "../types/types";
 import { BomDto } from "./dto/Bom.dto";
 import spdxLicenseList from "spdx-license-list/full";
 
@@ -5,7 +6,7 @@ const SEPARATOR = /(\s+OR\s+|\s+AND\s+|\/)/gim;
 const ONLY_A_SEPARATOR = /^(\s+OR\s+|\s+AND\s+|\/)$/gim;
 
 export default class MergedSbom {
-  private mergedSbom = new Map();
+  private mergedSbom: Map<string, LicenseData> = new Map();
 
   constructor(bomList: BomDto[]) {
     bomList.forEach((bom) => {
@@ -13,23 +14,27 @@ export default class MergedSbom {
     });
   }
 
-  public getLicenseNames() {
+  public getLicenseNames(): string[] {
     return [...this.mergedSbom.keys()];
   }
 
-  public getLicenseData(licenseName: string) {
+  public getLicenseData(licenseName: string): LicenseData | undefined {
     return this.mergedSbom.get(licenseName);
   }
 
-  public addBom(bom: BomDto) {
+  public addBom(bom: BomDto): void {
     bom.components?.forEach((component) => {
-      component?.licenseNames.forEach((licenseKey) => {
+      component?.licenseNames?.forEach((licenseKey) => {
         this.addSbomEntry(licenseKey, component.name, component.version);
       });
     });
   }
 
-  private addSbomEntry(licenseKey: string, name: string, version: string) {
+  private addSbomEntry(
+    licenseKey: string,
+    name: string,
+    version: string,
+  ): void {
     const cleansedLicenseKey = this.cleanLicenseKey(licenseKey);
 
     if (ONLY_A_SEPARATOR.test(cleansedLicenseKey)) {
@@ -51,7 +56,7 @@ export default class MergedSbom {
     return;
   }
 
-  private isSingleLicenseKey(licenseKey: string) {
+  private isSingleLicenseKey(licenseKey: string): boolean {
     return !SEPARATOR.test(licenseKey);
   }
 
@@ -59,7 +64,7 @@ export default class MergedSbom {
     licenseKey: string,
     name: string,
     version: string,
-  ) {
+  ): void {
     const license = spdxLicenseList[licenseKey];
     if (license === undefined) {
       console.warn(`License not found: '${licenseKey}' for ${name}@${version}`);
@@ -74,7 +79,7 @@ export default class MergedSbom {
     this.mergedSbom.set(license.name, content);
   }
 
-  private cleanLicenseKey(licenseKey: string) {
+  private cleanLicenseKey(licenseKey: string): string {
     const cleansedLicenseKey = licenseKey
       .replace(/[()]+/gim, "")
       .replace(/^Apache2$/, "Apache-2.0")
@@ -83,7 +88,7 @@ export default class MergedSbom {
     return cleansedLicenseKey;
   }
 
-  private splitLicenseString(licenseKey: string) {
+  private splitLicenseString(licenseKey: string): string[] {
     const licenseParts = licenseKey.split(SEPARATOR);
     return licenseParts;
   }
