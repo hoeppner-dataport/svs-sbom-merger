@@ -1,28 +1,21 @@
-import getRepoInfos from "./lib/getRepoInfos";
-import loadSboms from "./lib/loadSboms";
-import MergedSbom from "./lib/MergedSbom";
-import writeSbom from "./lib/writeSbom";
+import { writeFileSync } from "fs";
+import loadSboms from "./src/loadSboms";
+import MergedSbom from "./src/MergedSbom";
 
-const RELEASE_VERSION = process.env.RELEASE_VERSION;
+const filename = "dependencies.sbom.json";
+const repos = [
+  "hpi-schul-cloud/schulcloud-client:33.2.0",
+  "hpi-schul-cloud/tldraw-server:999.6.6",
+];
 
-const run = async () => {
-  if (!RELEASE_VERSION) {
-    console.error("RELEASE_VERSION is required");
-    return;
-  }
-
+export const run = async () => {
   try {
-    info("=== 1. Fetching repository information ===");
-    const repoInfo = await getRepoInfos(RELEASE_VERSION);
+    info("=== 1. Loading SBOMs ===");
+    const sboms = await loadSboms(filename, repos);
 
-    info("=== 2. Loading SBOMs ===");
-    const sboms = await loadSboms(repoInfo);
-
-    info("=== 3. Generating merged SBOM ===");
+    info("=== 2. Generating merged SBOM ===");
     const mergedSbom = new MergedSbom(sboms);
-
-    info("=== 4. Writing merged SBOM ===");
-    writeSbom(RELEASE_VERSION, mergedSbom);
+    writeFileSync(`svs-sbom.json`, mergedSbom.toString());
   } catch (error) {
     console.error("Error generating merged SBOM", error.message);
     console.error(error);

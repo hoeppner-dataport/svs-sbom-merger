@@ -1,5 +1,4 @@
-import { LicenseData } from "../types/types";
-import { BomDto } from "./dto/Bom.dto";
+import { LicenseData, LicenseList, Sbom } from "./types";
 import spdxLicenseList from "spdx-license-list/full";
 
 const SEPARATOR = /(\s+OR\s+|\s+AND\s+|\/)/gim;
@@ -8,7 +7,7 @@ const ONLY_A_SEPARATOR = /^(\s+OR\s+|\s+AND\s+|\/)$/gim;
 export default class MergedSbom {
   private mergedSbom: Map<string, LicenseData> = new Map();
 
-  constructor(bomList: BomDto[]) {
+  constructor(bomList: Sbom[]) {
     bomList.forEach((bom) => {
       this.addBom(bom);
     });
@@ -22,12 +21,48 @@ export default class MergedSbom {
     return this.mergedSbom.get(licenseName);
   }
 
-  public addBom(bom: BomDto): void {
-    bom.components?.forEach((component) => {
-      component?.licenseNames?.forEach((licenseKey) => {
-        this.addSbomEntry(licenseKey, component.name, component.version);
-      });
+  public addBom(bom: Sbom): void {
+    const noGithubActions = (e) =>
+      !/^pkg:githubaction/.test(e.referenceLocator);
+    const someValidRefs = (p) =>
+      p.externalRefs.filter(noGithubActions).length > 0;
+
+    const packages = bom.packages?.filter(someValidRefs) ?? [];
+    packages.forEach((p) => {
+      console.log(p.externalRefs.map((e) => e.referenceLocator));
+      if (p.licenseConcluded === undefined) {
+        console.warn(
+          `No license concluded for ${p.name}@${(p.versionInfo, JSON.stringify(p.externalRefs))}`,
+        );
+        return;
+      }
+      this.addSbomEntry(p.licenseConcluded, p.name, p.versionInfo);
     });
+  }
+
+  public toString(): string {
+    const licenseList = this.getLicenseList();
+    return JSON.stringify(licenseList, null, 2);
+  }
+
+  private getLicenseList(): LicenseList {
+    const licenseNames = this.getLicenseNames();
+    licenseNames.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    const result: LicenseList = {};
+    for (const licenseName of licenseNames) {
+      const licenseData = this.getLicenseData(licenseName);
+      if (!licenseData) {
+        continue;
+      }
+      const { licenseText, packages: components } = licenseData;
+      const sortedComponents = [...components].sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase()),
+      );
+      console.log(sortedComponents);
+      result[licenseName] = { licenseText, components: sortedComponents };
+    }
+    return result;
   }
 
   private addSbomEntry(
@@ -42,7 +77,7 @@ export default class MergedSbom {
     }
 
     if (this.isSingleLicenseKey(cleansedLicenseKey)) {
-      this.addComponentToLicense(cleansedLicenseKey, name, version);
+      this.addPackageToLicense(cleansedLicenseKey, name, version);
       return;
     }
 
@@ -60,7 +95,7 @@ export default class MergedSbom {
     return !SEPARATOR.test(licenseKey);
   }
 
-  private addComponentToLicense(
+  private addPackageToLicense(
     licenseKey: string,
     name: string,
     version: string,
@@ -73,9 +108,9 @@ export default class MergedSbom {
     const content = this.mergedSbom.get(license.name) ?? {
       licenseName: license.name,
       licenseText: license.licenseText,
-      components: new Set(),
+      packages: new Set(),
     };
-    content.components.add(`${name}@${version}`);
+    content.packages.add(`${name}@${version}`);
     this.mergedSbom.set(license.name, content);
   }
 

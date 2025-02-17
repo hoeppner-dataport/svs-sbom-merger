@@ -1,7 +1,5 @@
 import axios from "axios";
-import { RepoInfo } from "../types/types";
-import { BomDto } from "./dto/Bom.dto";
-import { getRepositoryUrl } from "./helper/repo.helper";
+import { Sbom } from "./types";
 
 const axiosInstance = axios.create();
 axiosInstance.defaults.maxRedirects = 0; // Set to 0 to prevent automatic redirects
@@ -18,10 +16,18 @@ axiosInstance.interceptors.response.use(
 );
 
 export default async function loadSboms(
-  repoInfo: Map<string, RepoInfo>,
-): Promise<BomDto[]> {
-  const promises = Array.from(repoInfo.values()).map((repo) => {
-    return loadSbom(repo.name, repo.version);
+  filename: string,
+  repos: string[],
+): Promise<Sbom[]> {
+  const repoInfo = repos.map((line) => {
+    if (/[^:]*:\d+\.\d+\.\d+$/.test(line) === false) {
+      throw new Error(`Invalid repository version format: ${line}`);
+    }
+    const [name, version] = line.split(":");
+    return { name, version };
+  });
+  const promises = repoInfo.map((repo) => {
+    return loadSbom(repo.name, repo.version, filename);
   });
   const results = await Promise.allSettled(promises);
   const sboms = processResults(results);
@@ -31,10 +37,10 @@ export default async function loadSboms(
 async function loadSbom(
   repository,
   repositoryVersion,
-): Promise<BomDto | undefined> {
-  const sbomUrl = `${getRepositoryUrl(
-    repository,
-  )}/releases/download/${repositoryVersion}/dependency-results.sbom.json`;
+  filename,
+): Promise<Sbom | undefined> {
+  const sbomUrl = `https://github.com/${repository}/releases/download/${repositoryVersion}/${filename}`;
+  console.log(sbomUrl);
   const response = await axiosInstance.get(sbomUrl);
   if (response.status !== 200) {
     console.error(
@@ -42,21 +48,21 @@ async function loadSbom(
     );
     return;
   }
-  const bom = new BomDto({
+  const sbom = {
     repository,
     repositoryVersion,
-    ...response.data,
-  });
-  if (bom) {
+    ...(response.data.sbom as Sbom),
+  };
+  if (sbom) {
     console.info(
-      `Loaded SBOM for ${repository}@${repositoryVersion} (containing ${bom?.components?.length ?? "---"} components))`,
+      `Loaded SBOM for ${repository}@${repositoryVersion} (containing ${sbom?.packages?.length ?? "---"} packages))`,
     );
   }
-  return bom;
+  return sbom;
 }
 
 function processResults(results) {
-  const sboms: BomDto[] = [];
+  const sboms: Sbom[] = [];
   for (const result of results) {
     if (result.status === "rejected") {
       console.warn(result.reason);
