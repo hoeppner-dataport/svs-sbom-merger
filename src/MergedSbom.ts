@@ -1,5 +1,6 @@
 import { LicenseData, LicenseList, Sbom } from "./types";
 import spdxLicenseList from "spdx-license-list/full";
+import core from '@actions/core';
 
 const SEPARATOR = /(\s+OR\s+|\s+AND\s+|\/)/gim;
 const ONLY_A_SEPARATOR = /^(\s+OR\s+|\s+AND\s+|\/)$/gim;
@@ -30,7 +31,7 @@ export default class MergedSbom {
     const packages = bom.packages?.filter(someValidRefs) ?? [];
     packages.forEach((p) => {
       if (p.licenseConcluded === undefined) {
-        console.warn(
+        core.warning(
           `No license concluded for ${p.name}@${p.versionInfo}`,
         );
         return;
@@ -100,7 +101,7 @@ export default class MergedSbom {
   ): void {
     const license = spdxLicenseList[licenseKey];
     if (license === undefined) {
-      console.warn(`License not found: '${licenseKey}' for ${name}@${version}`);
+      core.warning(`License not found: '${licenseKey}' for ${name}@${version}`);
       return;
     }
     const content = this.mergedSbom.get(license.name) ?? {

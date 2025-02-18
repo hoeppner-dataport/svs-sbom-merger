@@ -23,6 +23,8 @@
   },
   "homepage": "https://github.com/hoeppner-dataport/svs-sbom-merger#readme",
   "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
     "axios": "^1.7.9",
     "axios-cache-interceptor": "^1.6.2",
     "spdx-license-list": "^6.9.0"

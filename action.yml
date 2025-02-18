@@ -1,0 +1,13 @@
+name: "svs-sbom-merger"
+description: "Merge SBOMs from multiple sources and provide summarising json grouped by license."
+# inputs:
+#   filename: dependencies.sbom.json
+#   repos: |-
+#     hpi-schul-cloud/schulcloud-client:999.6.6
+#     hpi-schul-cloud/tldraw-server:999.6.6
+# outputs:
+#   json:
+#     description: "json data summarising used packages grouped by license"
+runs:
+  using: "bun2"
+  main: "index.ts"
