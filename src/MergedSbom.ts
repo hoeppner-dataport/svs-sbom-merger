@@ -29,10 +29,9 @@ export default class MergedSbom {
 
     const packages = bom.packages?.filter(someValidRefs) ?? [];
     packages.forEach((p) => {
-      console.log(p.externalRefs.map((e) => e.referenceLocator));
       if (p.licenseConcluded === undefined) {
         console.warn(
-          `No license concluded for ${p.name}@${(p.versionInfo, JSON.stringify(p.externalRefs))}`,
+          `No license concluded for ${p.name}@${p.versionInfo}`,
         );
         return;
       }
@@ -59,7 +58,6 @@ export default class MergedSbom {
       const sortedComponents = [...components].sort((a, b) =>
         a.toLowerCase().localeCompare(b.toLowerCase()),
       );
-      console.log(sortedComponents);
       result[licenseName] = { licenseText, components: sortedComponents };
     }
     return result;

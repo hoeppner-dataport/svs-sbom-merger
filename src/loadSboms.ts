@@ -40,7 +40,6 @@ async function loadSbom(
   filename,
 ): Promise<Sbom | undefined> {
   const sbomUrl = `https://github.com/${repository}/releases/download/${repositoryVersion}/${filename}`;
-  console.log(sbomUrl);
   const response = await axiosInstance.get(sbomUrl);
   if (response.status !== 200) {
     console.error(
