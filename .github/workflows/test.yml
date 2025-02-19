@@ -6,7 +6,7 @@ jobs:
         name: Test the action
         runs-on: ubuntu-latest
         steps:
-            - name: Hello world action step
+            - name: Summarise SVS-SBOMs
               uses: hoeppner-dataport/summarise-svs-sboms@96799d805929d83914d650387a8e0dff82be2da9
               with:
                   filename: dependencies.sbom.json
