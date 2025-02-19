@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Hello world action step
-              uses: hoeppner-dataport/summarise-svs-sboms@536bb572f32c071f83831d2db316fe589fc3f829
+              uses: hoeppner-dataport/summarise-svs-sboms@06b0c4cea32da6eedbe70a9e79c149fb469c7730
               with:
                   filename: dependencies.sbom.json
                   repos: |-
