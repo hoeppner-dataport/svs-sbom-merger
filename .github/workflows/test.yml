@@ -1,0 +1,17 @@
+on:
+    workflow_dispatch:
+
+jobs:
+    test-my-action:
+        name: Test the action
+        runs-on: composite
+        steps:
+            - name: Hello world action step
+              uses: oven-sh/setup-bun@v2
+
+            - run: bun index.ts
+              # with:
+              #     filename: dependencies.sbom.json
+              #     repos: |-
+              #         hpi-schul-cloud/schulcloud-client:999.6.6
+              #         hpi-schul-cloud/tldraw-server:999.6.6
