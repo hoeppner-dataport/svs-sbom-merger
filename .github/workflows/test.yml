@@ -4,14 +4,13 @@ on:
 jobs:
     test-my-action:
         name: Test the action
-        runs-on: composite
+        runs-on: ubuntu-latest
         steps:
             - name: Hello world action step
-              uses: oven-sh/setup-bun@v2
-
-            - run: bun index.ts
-              # with:
-              #     filename: dependencies.sbom.json
-              #     repos: |-
-              #         hpi-schul-cloud/schulcloud-client:999.6.6
-              #         hpi-schul-cloud/tldraw-server:999.6.6
+              uses: hoeppner-dataport/summarise-svs-sboms@3efd06c862ca94c01e08b5f0d8a9d940e37107f0
+              with:
+                  filename: dependencies.sbom.json
+                  repos: |-
+                      hpi-schul-cloud/schulcloud-client:999.6.6
+                      hpi-schul-cloud/tldraw-server:999.6.6
+                      hpi-schul-cloud/schulcloud-server:999.6.6
