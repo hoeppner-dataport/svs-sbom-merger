@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Summarise SVS-SBOMs
-              uses: hoeppner-dataport/summarise-svs-sboms
+              uses: hoeppner-dataport/summarise-svs-sboms@878e288f16f32be59bd19b12dd668a7874df7f06
               with:
                   filename: dependencies.sbom.json
                   repos: hpi-schul-cloud/tldraw-server:999.6.6;hpi-schul-cloud/schulcloud-client:999.6.6;hpi-schul-cloud/schulcloud-server:999.6.6
