@@ -14,4 +14,4 @@ jobs:
                   repos: hpi-schul-cloud/tldraw-server:999.6.6;hpi-schul-cloud/schulcloud-client:999.6.6;hpi-schul-cloud/schulcloud-server:999.6.6
 
             - name: work with json
-              run: echo '${{ steps.summary.outputs.json }}'
+              run: echo '${{ toJson(steps.summary.outputs.json) }}'
