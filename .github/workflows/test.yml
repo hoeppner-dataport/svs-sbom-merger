@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Summarise SVS-SBOMs
-              uses: hoeppner-dataport/summarise-svs-sboms@ddc04b7b05bde7daa9cdb32193c604927f874e63
+              uses: hoeppner-dataport/summarise-svs-sboms
               with:
                   filename: dependencies.sbom.json
                   repos: |-
